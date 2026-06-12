@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Virtual environment
+venv/
+env/
+.venv/
+.env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Vosk model (large binary)
+vosk-model-cn-0.22/
+vosk-model-cn-0.22.zip
+
+# MediaPipe model (large binary)
+hand_landmarker.task
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Git
+.gitattributes

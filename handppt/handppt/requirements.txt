@@ -1,0 +1,9 @@
+opencv-python==4.13.0.92
+mediapipe==0.10.35
+Pillow==12.2.0
+numpy==2.4.6
+python-pptx==1.0.2
+vosk==0.3.45
+pyaudio==0.2.14
+pywin32==312
+openai>=1.0.0
