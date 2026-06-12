@@ -13,6 +13,10 @@ MIN_TRACKING_CONFIDENCE = 0.5
 MAX_NUM_HANDS = 1
 
 # ---------- 手势-按键映射表 ----------
+# 注意：此映射表为「备用/预留」定义，当前未集成到主流程。
+# gesture_recognizer.py 返回的手势名（swipe_left, one_finger, fist, thumbs_up 等）
+# 直接在 main.py 中 dispatch 到 ppt_ctrl 的方法，未使用此表进行按键映射。
+# 如需启用，需在 ppt_controller._press_key 的调用路径中接入此映射。
 GESTURE_KEY_MAP = {
     "fist": {                    # 握拳
         "key": "space",

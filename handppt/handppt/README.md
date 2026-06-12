@@ -1,30 +1,37 @@
-# 🖐️ 手势 + 语音 PPT 控制器
+# 手势 + 语音 PPT 控制器
 
 基于 **MediaPipe 手部检测** + **Vosk 离线语音识别** + **DeepSeek AI 演讲稿生成**，通过手势、语音或键盘控制 PPT 翻页，支持 AI 自动生成演讲稿并滚动显示（提词器）。
 
 ---
 
-## 🚀 快速启动
+## 快速启动
 
 ```bash
 # 1. 安装依赖
 pip install -r requirements.txt
 
-# 2. 下载 Vosk 中文语音模型
-#    下载地址: https://alphacephei.com/vosk/models/vosk-model-cn-0.22.zip
-#    解压到项目根目录，重命名为 vosk-model-cn-0.22
+# 2. 下载 MediaPipe 手部检测模型
+#    下载地址：https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task
+#    将 hand_landmarker.task 放到 handppt/ 目录下（与 hand_detector.py 同目录）
 
-# 3. 启动
+# 3. 下载 Vosk 中文语音模型
+#    下载地址：https://alphacephei.com/vosk/models/vosk-model-cn-0.22.zip
+#    解压后找到包含 "am" 文件夹的目录，放到项目根目录，
+#    目录名设置为 vosk-model-cn-0.22
+#    （程序会自动查找 vosk-model-cn-0.22、model 等候选路径，
+#     并递归搜索 am 子目录）
+
+# 4. 启动
 python main.py
 ```
 
-> **可选功能**：如需 AI 演讲稿生成，需注册 [DeepSeek](https://platform.deepseek.com/) 获取 API Key，在弹出设置面板中填入即可。
+> **可选功能**：如需 AI 演讲稿生成，需注册 [DeepSeek](https://platform.deepseek.com/) 获取 API Key（格式：`sk-xxx...`），在弹出设置面板中填入即可。
 
-> **兼容 PowerPoint / WPS** —— 所有控制通过模拟键盘按键实现。
+> **键盘控制**：兼容 PowerPoint / WPS —— 所有控制通过模拟键盘按键实现（需要 pywin32，仅 Windows）。
 
 ---
 
-## 🔄 启动流程
+## 启动流程
 
 ```
 启动 → 选择 PPTX 文件 → 弹出演讲稿设置面板(tkinter)
@@ -37,11 +44,11 @@ python main.py
 
 ---
 
-## ✨ 功能亮点
+## 功能亮点
 
 | 特性 | 说明 |
 |------|------|
-| **🖐 手势控制** | 9 种手势：左右滑翻页、伸 1/2 指翻页、OK 切语音、大拇指首页、五指末页、比心标记、三切换提词器 |
+| **🖐 手势控制** | 9 种手势：左右滑翻页、伸 1/2 指翻页、OK 切语音、大拇指首页、五指末页、比心标记、三指切换提词器 |
 | **🎤 语音控制** | 离线中文语音识别，支持翻页、跳转、黑屏、结束放映、切回手势、PPT 文字匹配字幕 |
 | **🤖 AI 演讲稿生成** | 接入 DeepSeek API，逐页生成口语化演讲稿，支持手动编辑 |
 | **📜 演讲稿提词器** | 翻页后底部自动显示当前页演讲稿，跑马灯横向滚动，0.5 秒淡入动画 |
@@ -54,7 +61,7 @@ python main.py
 
 ---
 
-## 🎮 全部功能对照表
+## 全部功能对照表
 
 ### 手势控制（默认进入）
 
@@ -81,7 +88,7 @@ python main.py
 | **"黑屏" / "关屏"** | **黑屏 / 恢复显示** |
 | **"结束放映" / "退出放映"** | **退出全屏放映** |
 | **"ok" / "好的"** | **切回手势控制模式** |
-| **PPT 上的文字**（如"项目背景"） | ✅ **底部字幕显示匹配到的 PPT 原文** |
+| **PPT 上的文字**（如"项目背景"） | **底部字幕显示匹配到的 PPT 原文** |
 
 ### 键盘快捷键
 
@@ -96,156 +103,32 @@ python main.py
 
 ---
 
-## 🤖 AI 演讲稿生成
+## AI 演讲稿生成
 
-### 设置面板
+本功能通过 DeepSeek Chat API（兼容 OpenAI SDK）逐页生成口语化演讲稿。
 
-启动选择 PPTX 后，弹出 **演讲稿设置面板**（tkinter 窗口 780×680），布局如下：
+### 使用方法
 
-```
-┌─────────────────────────────────────┐
-│  📋 演讲稿设置面板                    │
-│                                     │
-│  DeepSeek API Key: [______________] │
-│  模型: [deepseek-chat ▼]           │
-│  Token限制: [500]  创意度: [═══●══]  │
-│                                     │
-│  [🔄 生成全部演讲稿]  进度: ████░░ 8/9│
-│                                     │
-│  ┌────页码列表────┐ ┌──预览/编辑────────┐ │
-│  │ 📄 第1页 项目背景│ │ 各位老师好，今天我  │ │
-│  │ 📄 第2页 需求分析│ │ 汇报的题目是...    │ │
-│  │ 📄 第3页 ◄ 方案  │ │                    │ │
-│  │ 📄 第4页 实施计划│ │                    │ │
-│  │ ...             │ │                    │ │
-│  └────────────────┘ └──────────────────┘ │
-│                                     │
-│    [✅ 开始演示]  [⏩跳过]  [✕ 取消]   │
-└─────────────────────────────────────┘
-```
+1. 启动程序 -> 选择 PPTX 文件 -> 弹出设置面板
+2. 填入 DeepSeek API Key（格式：`sk-xxx...`），选择模型
+3. 点击"生成全部演讲稿" — 逐页调用 API，进度条实时显示
+4. 生成完成后可在预览区双击编辑任意页演讲稿
+5. 点击"开始演示"进入控制模式
 
-**功能说明：**
+### 重要提示
 
-1. **API Key 输入** — 填入 DeepSeek API Key，支持切换显示/隐藏
-2. **模型选择** — `deepseek-chat` 或 `deepseek-reasoner`
-3. **Token 限制** — 每页演讲稿最大 token 数（100~2000）
-4. **创意度** — 滑块调节 0.0~1.0
-5. **生成全部演讲稿** — 逐页调用 DeepSeek API，带实时进度条
-6. **页码列表** — 左侧显示所有页码及首行文字摘要
-7. **预览/编辑** — 右侧可编辑文本框，双击任一页即可修改演讲稿
-8. **跳过生成** — 不生成演讲稿，直接开始演示
-9. **开始演示** — 确认配置，进入摄像头 + 手势控制
-
-### 演讲稿生成逻辑
-
-```python
-# speech_generator.py
-generate_speech(texts, page_num, api_key)  -> 单页生成
-generate_batch(texts_by_page, api_key, ...) -> 批量生成（带进度回调）
-```
-
-- 调用 DeepSeek Chat API（兼容 OpenAI SDK）
-- 将幻灯片文字构造成专业提示词，生成口语化演讲稿（100~200 字）
-- 使用第一人称，自然流畅，不照搬原文
-- 支持超时处理与 API Key 隐藏（错误日志脱敏）
+- **API Key 仅存储在内存中** — 设置面板填入的 Key 仅传递给 `config.DEEPSEEK_API_KEY`（内存变量），不会写入磁盘文件。每次启动程序需重新填写。
+- **费用提示**：DeepSeek Chat API 按 token 计费，每页演讲稿约消耗 500~1000 token，请参考 [DeepSeek 定价页面](https://platform.deepseek.com/usage)
+- **超时处理**：单页生成默认 60 秒超时，失败后可在设置面板手动编辑作为备选
+- **速率限制**：批量生成时逐页串行调用，避免触发 API 速率限制
+- **Fallback 支持**：API 调用失败时仍可手动在面板中编辑演讲稿，不影响演示
+- ⚠️ **不要把 API Key 硬编码写入 `config.py` 并提交到公开仓库！**
 
 ---
 
-## 📜 演讲稿提词器
+## 配置说明
 
-| 特性 | 说明 |
-|------|------|
-| **显示位置** | 屏幕底部 120px 高的半透明黑色条 |
-| **文字样式** | 白色/青色文字，16px，自动换行滚动 |
-| **滚动模式** | 跑马灯横向滚动，从右向左水平移动 |
-| **淡入动画** | 翻页时 0.5 秒 alpha 过渡 |
-| **切换显示** | 🤟 三指手势或程序自动切换 显示/隐藏 |
-| **配置** | `config.py` 中可调节滚动速度、暂停恢复时间等 |
-
-每次翻页后自动显示当前页演讲稿（通过 `screen_overlay.show_speech()` 驱动）。
-
----
-
-## 📊 重点页标记与报告
-
-### 比心手势标记
-
-在演示过程中，比 ❤️ 手势（拇指+食指尖交叉捏合，其余三指张开）即可将当前页标记为重点页。
-
-- 稳定 10 帧后触发，3 秒冷却防误触
-- 画面显示 `★` 标记
-- 支持多页标记
-
-### 重点页报告（R 键）
-
-在键盘上按 **R 键** 即可生成并打印完整报告：
-
-```
-==================================================
-📋 重点页报告
-PPT: 手势识别控制PPT汇报 (3).pptx
-共 3 个重点标记
-==================================================
-
-1. 第 3 页
-   内容摘要: 技术方案 | 系统架构 | 核心算法
-   演讲稿: 接下来我们来看技术方案部分。整个系统采用模块化架构设计...
-
-2. 第 7 页
-   内容摘要: 实验结果 | 数据分析 | 性能对比
-   演讲稿: 在实验环节，我们对系统进行了全面的性能测试...
-
-==================================================
-```
-
----
-
-## 💡 一句话流程
-
-> **选择 PPTX → 设置面板填入 API Key 生成演讲稿 → 开始演示 → 举手左滑/右滑翻页 → 底部自动显示演讲稿 → 比心标记重点页**
-
-### 实际使用场景示例
-
-1. 🎬 启动程序，选择 PPTX 文件
-2. 📋 设置面板中填入 DeepSeek API Key，点击"生成全部演讲稿"
-3. 📝 预览并手动编辑第 3 页演讲稿
-4. ✅ 点击"开始演示"
-5. 🤚 手掌右滑 → 翻到第 2 页 → 底部自动显示第 2 页演讲稿
-6. ☝️ 伸 1 指 → 翻到第 3 页 → 演讲稿自动切换
-7. ❤️ 比心手势 → 当前页标记为重点页（显示 ★）
-8. 👍 比 OK 手势 → 切换到语音模式
-9. 🎤 说"项目背景" → 底部字幕显示 `📖 项目背景`
-10. 🎤 说"下一页" → 翻到下一页 → 演讲稿自动更新
-11. 🎤 说"ok" → 切回手势模式
-12. 🤟 三指手势 → 隐藏底部演讲稿，再比一次恢复
-13. ⌨️ 按 R 键 → 控制台打印重点页报告
-
----
-
-## 📦 项目文件结构
-
-| 文件 | 说明 |
-|------|------|
-| `main.py` | **主程序入口**，整合所有模块，主循环（选择文件 → 设置面板 → 摄像头 → 手势/语音控制） |
-| `config.py` | **配置文件**（摄像头、手势阈值、语音模型路径、DeepSeek API、提词器参数等） |
-| `hand_detector.py` | **手部检测模块**（MediaPipe Hand Landmarker 封装） |
-| `gesture_recognizer.py` | **手势识别逻辑**（9 种手势：滑动、OK、1/2指、大拇指、五指、比心、三指） |
-| `voice_recognizer.py` | **语音识别模块**（Vosk 离线语音识别封装） |
-| `ppt_controller.py` | **PPT 控制器**（python-pptx 解析文字 + win32api 模拟键盘 + 演讲稿缓存 + 重点页标记） |
-| `overlay_renderer.py` | **摄像头画面叠加渲染**（手势名、页码、语音文字） |
-| `screen_overlay.py` | **屏幕叠加层**（tkinter 透明置顶窗口，底部跑马灯演讲稿 + 语音字幕） |
-| `speech_generator.py` | **AI 演讲稿生成器**（调用 DeepSeek Chat API，支持单页/批量生成） |
-| `settings_panel.py` | **启动前设置面板**（tkinter 窗口：API Key 配置、演讲稿生成/编辑、开始演示） |
-| `generate_ppt.py` | 测试用 PPTX 生成工具 |
-| `hand_landmarker.task` | MediaPipe 手部检测模型 |
-| `requirements.txt` | Python 依赖清单 |
-| `README.md` | 本说明文档 |
-
----
-
-## ⚙️ 配置说明
-
-编辑 `config.py` 可调整：
+所有可调参数集中在 `config.py` 中，以下为完整参数说明：
 
 ### 摄像头
 
@@ -262,7 +145,7 @@ PPT: 手势识别控制PPT汇报 (3).pptx
 | `SWIPE_THRESHOLD` | 80 | 滑动触发阈值（像素） |
 | `SWIPE_COOLDOWN_SECONDS` | 2.0 | 翻页冷却时间（秒） |
 | `ADAPTIVE_STABILITY_SECONDS` | 0.2 | 自适应稳定时长（秒） |
-| `ADAPTIVE_COOLDOWN_FRAMES` | 6 | 自适应冷却帧数 |
+| `ADAPTIVE_COOLDOWN_FRAMES` | 6 | 自适应冷却帧数（帧） |
 | `OK_GESTURE_DISTANCE_THRESHOLD` | 40 | OK 手势判定阈值 |
 | `FIST_STABLE_FRAMES` | 8 | 握拳稳定帧数 |
 | `THUMBS_UP_STABLE_FRAMES` | 8 | 竖大拇指稳定帧数 |
@@ -274,7 +157,7 @@ PPT: 手势识别控制PPT汇报 (3).pptx
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `VOSK_MODEL_DIR` | `vosk-model-cn-0.22` | Vosk 模型目录名 |
+| `VOSK_MODEL_DIR` | `vosk-model-cn-0.22` | Vosk 模型目录名（程序会递归搜索包含 am 子目录的路径） |
 | `SAMPLE_RATE` | 16000 | 采样率 |
 | `SILENCE_TIMEOUT` | 2.0 | 静默超时（秒） |
 | `WAKE_WORD` | `ok` | 切回手势模式的唤醒词 |
@@ -283,10 +166,10 @@ PPT: 手势识别控制PPT汇报 (3).pptx
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `DEEPSEEK_API_KEY` | `""` | DeepSeek API Key |
+| `DEEPSEEK_API_KEY` | `""` | DeepSeek API Key（内存存储，不持久化） |
 | `DEEPSEEK_MODEL` | `deepseek-chat` | 模型名称 |
 | `DEEPSEEK_MAX_TOKENS` | 500 | 每页最大 token 数 |
-| `DEEPSEEK_TEMPERATURE` | 0.7 | 创意度（0=严谨, 1=创意） |
+| `DEEPSEEK_TEMPERATURE` | 0.7 | 创意度（0=严谨，1=创意） |
 | `SHOW_SPEECH_PROMPTER` | True | 翻页时自动显示提词器 |
 
 ### 提词器滚动
@@ -305,20 +188,22 @@ PPT: 手势识别控制PPT汇报 (3).pptx
 | `INITIAL_MODE` | `gesture` | 初始模式（gesture / voice） |
 | `PPT_NEXT_KEY` | `pagedown` | 下一页按键 |
 | `PPT_PREV_KEY` | `pageup` | 上一页按键 |
-| `TEXT_MATCH_THRESHOLD` | 0.8 | PPT 文字匹配相似度阈值 |
+| `TEXT_MATCH_THRESHOLD` | 0.8 | PPT 文字匹配阈值（预留，当前使用子串匹配，未使用相似度算法） |
+| `GESTURE_KEY_MAP` | (详见表) | 手势→按键映射表（预留/备用，当前未集成到主流程。主流程由 main.py 直接 dispatch） |
 | `SHOW_HELP` | True | 画面显示帮助信息 |
 
 ---
 
-## 🧠 技术原理
+## 技术原理
 
 ### 手部检测 & 手势识别
 
-1. **MediaPipe Hand Landmarker** — 每帧检测手部 21 个关键点（landmark）的 3D 坐标
-2. **几何规则判断** — 通过指尖与指根的坐标关系判定每根手指的弯曲/伸直状态
-3. **方向识别** — 手掌中心点连续 N 帧水平位移超过阈值则判定为左滑/右滑
-4. **自适应防抖** — 稳定帧数 = `max(3, FPS × 0.2s)`，无论帧率高低都能保持约 0.2 秒确认时间
-5. **9 种手势识别**：
+1. **MediaPipe Hand Landmarker** — 基于 `hand_landmarker.task` 模型文件，每帧检测手部 21 个关键点（landmark）的 3D 坐标
+2. **模型文件**：下载 `hand_landmarker.task`（约 14MB）放到 `handppt/` 目录。下载地址：`https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task`
+3. **几何规则判断** — 通过指尖与指根的坐标关系判定每根手指的弯曲/伸直状态
+4. **方向识别** — 手掌中心点连续 N 帧水平位移超过阈值则判定为左滑/右滑
+5. **自适应防抖** — 稳定帧数 = `max(3, FPS × 0.2s)`，无论帧率高低都能保持约 0.2 秒确认时间
+6. **9 种手势识别**：
    - 滑动翻页（左/右）
    - 数字指法（1 指→下一页，2 指→上一页）
    - OK 手势（拇指+食指捏合，其余三指张开）
@@ -329,19 +214,20 @@ PPT: 手势识别控制PPT汇报 (3).pptx
 ### 语音识别
 
 1. **Vosk 离线语音识别** — 本地运行，无需联网，支持中文
-2. **双模式输出** — partial（部分识别结果，实时显示） + final（最终结果，用于命令处理）
-3. **翻页防抖** — 同一方向翻页命令 1 秒内不重复触发
-4. **多关键词匹配** — 每句命令支持多个同义词
+2. **模型搜索路径**：程序会依次检查 `vosk-model-cn-0.22`、`vosk-model-small-cn-0.22`、`model` 等候选目录，并递归搜索包含 `am` 文件夹的子目录，支持嵌套解压结构
+3. **双模式输出** — partial（部分识别结果，实时显示）+ final（最终结果，用于命令处理）
+4. **翻页防抖** — 同一方向翻页命令 1 秒内不重复触发
+5. **多关键词匹配** — 每句命令支持多个同义词
 
 ### PPT 文字匹配
 
 1. **python-pptx** — 启动时解析 PPTX 所有幻灯片文字 + 位置信息
-2. **模糊匹配** — 去除标点/空格后，检查语音文本是否包含 PPT 文本或反向包含
+2. **去标点子串匹配** — 去除标点/空格/大小写后，检查语音文本与 PPT 文本是否为子串包含关系（`text_clean in spoken_clean or spoken_clean in text_clean`）。此为基于字符串包含的判断，非相似度算法；`TEXT_MATCH_THRESHOLD` 参数预留用于未来升级为模糊匹配（如 rapidfuzz）
 3. **字幕显示** — 匹配到的 PPT 原文会显示在屏幕底部字幕条中
 
 ### AI 演讲稿生成
 
-1. **DeepSeek Chat API** — 兼容 OpenAI SDK，通过 `openai` 库调用
+1. **DeepSeek Chat API** — 兼容 OpenAI SDK，通过 `openai` 库调用（`base_url="https://api.deepseek.com"`）
 2. **逐页生成** — 将每页幻灯片文字构造成提示词，生成口语化演讲稿
 3. **批量进度** — `generate_batch()` 支持逐页回调更新 UI 进度条
 4. **可编辑** — 生成的演讲稿可在设置面板中手动修改
@@ -349,7 +235,7 @@ PPT: 手势识别控制PPT汇报 (3).pptx
 ### 屏幕叠加层（提词器 + 字幕）
 
 1. **tkinter 透明窗口** — `overrideredirect(True)` + 透明色键实现全屏透明覆盖
-2. **置顶 + 点击穿透** — Windows 扩展样式实现
+2. **置顶 + 点击穿透** — Windows 扩展样式实现（依赖 pywin32，仅 Windows）
 3. **跑马灯演讲稿** — 底部 120px 半透明黑色条，文字横向滚动
 4. **语音字幕** — 独立区域显示语音识别结果
 5. **淡入动画** — `after()` 定时器驱动 alpha 过渡（0.5 秒）
@@ -357,8 +243,8 @@ PPT: 手势识别控制PPT汇报 (3).pptx
 
 ### PPT 控制
 
-1. **模拟键盘按键** — `win32api.keybd_event` 发送标准快捷键
-2. **COM 同步页码** — 可选通过 PowerPoint COM 接口获取实际页码
+1. **模拟键盘按键** — `win32api.keybd_event` 发送标准快捷键（依赖 pywin32，仅 Windows）
+2. **COM 同步页码** — 可选通过 PowerPoint COM 接口获取实际页码（依赖 pywin32，仅 Windows）
 3. **页码追踪** — 内部维护 0-based 计数器 + 边界限制
 
 ### 重点页标记
@@ -369,10 +255,21 @@ PPT: 手势识别控制PPT汇报 (3).pptx
 
 ---
 
-## 🖥 环境要求
+## 环境要求
 
-- **Python** 3.9+
-- **操作系统**：Windows（推荐，利用 win32api 透明窗口）+ Linux/macOS（基础功能可用，无字幕）
+| 功能 | Windows | Linux / macOS |
+|------|---------|---------------|
+| 手势检测 & 识别 | ✅ | ✅ |
+| 语音识别（Vosk） | ✅ | ✅ |
+| PPTX 文字解析 | ✅ | ✅ |
+| 键盘模拟翻页（`_press_key`） | ✅ 需要 pywin32 | ❌ 不可用（pywin32 不可用，`_press_key` 静默失效，无备用方案） |
+| 屏幕透明叠加层（提词器 + 字幕） | ✅ 需要 pywin32 | ❌ 不可用（tkinter 透明窗口依赖 win32gui/win32con） |
+| PowerPoint COM 同步页码 | ✅ 需要 pywin32 | ❌ 不可用（COM 为 Windows 专属） |
+| 点击穿透字幕窗口 | ✅ Windows 专属 | ❌ 不可用 |
+| AI 演讲稿生成 | ✅ 需要网络 | ✅ 需要网络 |
+
+- **Python 版本**：3.9+
+- **操作系统**：Windows（推荐，功能完整）+ Linux/macOS（手势/语音检测和 PPTX 解析可用，键盘模拟和字幕窗口不可用）
 - **摄像头**：USB 或内置摄像头
 - **麦克风**：用于语音识别
 - **PowerPoint 或 WPS**：用于放映 PPTX 文件
@@ -380,7 +277,7 @@ PPT: 手势识别控制PPT汇报 (3).pptx
 
 ---
 
-## 📥 安装依赖
+## 安装依赖
 
 ```bash
 pip install -r requirements.txt
@@ -397,12 +294,19 @@ pip install -r requirements.txt
 | python-pptx | 1.0+ | PPTX 文件解析，提取幻灯片文字 |
 | vosk | 0.3+ | 离线中文语音识别 |
 | pyaudio | 0.2+ | 麦克风音频采集 |
-| pywin32 | — | Windows API 调用（字幕透明窗口） |
+| pywin32 | — | Windows API 调用（字幕透明窗口、键盘模拟、COM 同步） |
 | openai | 1.0+ | DeepSeek / OpenAI API 调用（演讲稿生成） |
+
+> **安装注意事项**：
+> - 使用 `pip install -r requirements.txt` 一键安装所有依赖
+> - **pyaudio** 在 Windows 上可能需要预先安装 Visual C++ 运行时或使用 wheel 包
+> - **pywin32** 仅支持 Windows，安装后可能需要运行 `python -m pywin32_postinstall -install` 完成注册
+> - **mediapipe 0.10.x** 需要 Task API 兼容版本，推荐 `0.10.35`
+> - **numpy 版本兼容性**：mediapipe 0.10.35 兼容 numpy 1.x 和 2.x，如遇兼容问题可回退到 `numpy<2`
 
 ---
 
-## ❓ 常见问题
+## 常见问题
 
 ### 1. 摄像头无法打开
 检查摄像头是否被其他程序占用，在 `config.py` 中修改 `CAMERA_ID`（尝试 0、1、2）。
@@ -411,15 +315,17 @@ pip install -r requirements.txt
 - 已下载 Vosk 中文模型并解压到项目根目录
 - 麦克风已正常连接并可被 Python 访问（检查 pyaudio 安装）
 - 模型目录名与 `config.py` 中 `VOSK_MODEL_DIR` 一致
+- 程序会自动搜索 `vosk-model-cn-0.22`、`vosk-model-small-cn-0.22`、`model` 等候选路径，并递归查找包含 `am` 文件夹的子目录。如果模型解压后出现嵌套目录（如 `vosk-model-cn-0.22/vosk-model-cn-0.22/`），保留内层目录即可
 
 ### 3. PPT 文字无法匹配
 - 确保 PPTX 中的文字是**可编辑文本框**（不是图片中或 SmartArt 中内嵌的文本）
 - 语音识别的准确率受麦克风质量影响，建议在安静环境下使用
-- 匹配是**模糊匹配** — 说出的文字可以是 PPT 文字的子集或超集
+- 匹配方式是**去标点子串包含匹配**（非相似度算法）—— 说出的文字是 PPT 文字的子集或超集即可匹配
 
 ### 4. 字幕窗口不显示
-- 需要 `pywin32` 包支持透明窗口样式
+- 需要 `pywin32` 包支持透明窗口样式（仅 Windows）
 - 如果使用 WPS，确保放映窗口为全屏模式
+- **非 Windows 用户**：字幕/提词器窗口功能不可用。Linux 用户可考虑用 `xdotool` 替代键盘模拟（需自行修改 `_press_key()` 实现）
 
 ### 5. 手势识别不灵敏
 - 保证手部在摄像头画面中完整可见
@@ -427,9 +333,10 @@ pip install -r requirements.txt
 - 调节 `SWIPE_THRESHOLD`（值越小滑动越易触发）
 
 ### 6. AI 演讲稿生成失败
-- 确认 DeepSeek API Key 填写正确
+- 确认 DeepSeek API Key 填写正确（格式：`sk-xxx...`）
 - 检查网络连接能否访问 `api.deepseek.com`
 - 可在设置面板中手动编辑演讲稿作为备选
+- API Key 仅存储在内存中，不会写入磁盘，每次启动需重新填写
 
 ### 7. 比心手势不触发
 - 确保拇指和食指指尖完全交叉捏合，其余三指张开伸直
@@ -442,6 +349,6 @@ pip install -r requirements.txt
 
 ---
 
-## 📄 许可证
+## 许可证
 
 MIT License
